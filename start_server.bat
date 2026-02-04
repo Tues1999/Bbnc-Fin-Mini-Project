@@ -1,13 +1,14 @@
 @echo off
+chcp 65001 >nul
 setlocal
 cd /d %~dp0
 
-title ระบบการเงินโรงเรียนบ้านบางน้ำจืด (Financial System)
+title Ban Bang Nam Chuet Financial System
 
 echo.
 echo ========================================================
 echo   Starting Financial System Setup & Launcher
-echo   ระบบการเงินโรงเรียนบ้านบางน้ำจืด
+echo   (System is checking requirements...)
 echo ========================================================
 echo.
 
@@ -18,7 +19,7 @@ if %errorlevel% neq 0 (
     echo Please install Python from https://www.python.org/downloads/
     echo AND make sure to check "Add Python to PATH" during installation.
     echo.
-    echo เมื่อติดตั้ง Python แล้ว ให้รันไฟล์นี้ใหม่อีกครั้ง
+    echo After installing Python, please run this file again.
     echo.
     pause
     exit /b
@@ -58,8 +59,8 @@ echo.
 echo Server running at: http://127.0.0.1:5000
 echo (Browser should open automatically)
 echo.
-echo [NOTE] อย่าปิดหน้าต่างนี้! (Do not close this window)
-echo กด Ctrl+C เพื่อปิดเซิร์ฟเวอร์
+echo [NOTE] Do not close this window while using the system.
+echo Press Ctrl+C to stop the server.
 echo.
 
 start http://127.0.0.1:5000
