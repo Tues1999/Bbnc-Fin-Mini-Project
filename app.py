@@ -348,9 +348,16 @@ def ledger_view(type):
         db.session.commit()
         flash('บันทึกรายการเรียบร้อยแล้ว', 'success')
     
-    # Fetch entries (Optimized with Eager Loading)
+    # Fetch entries (Optimized with Eager Loading & Date Filtering)
     from sqlalchemy.orm import joinedload
-    entries = LedgerEntry.query.filter_by(ledger_type=config['db_type']).options(
+    query = LedgerEntry.query.filter_by(ledger_type=config['db_type'])
+    
+    if balance_start_date:
+        query = query.filter(LedgerEntry.date >= balance_start_date)
+    if balance_end_date:
+        query = query.filter(LedgerEntry.date <= balance_end_date)
+        
+    entries = query.options(
         joinedload(LedgerEntry.created_by),
         joinedload(LedgerEntry.expense_request).joinedload(ExpenseRequest.requester)
     ).order_by(LedgerEntry.date).all()
