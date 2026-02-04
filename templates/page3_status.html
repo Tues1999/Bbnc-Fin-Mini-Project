@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">สถานะคำขอเบิกเงิน</h4>
+            </div>
+            <div class="card-body">
+                {% if requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 8%">เลขที่</th>
+                                <th style="width: 10%">วันที่</th>
+                                <th style="width: 12%">ผู้ขอเบิก</th>
+                                <th style="width: 10%">จำนวนเงิน (บาท)</th>
+                                <th style="width: 10%">ประเภทบัญชี</th>
+                                <th style="width: 15%">รายละเอียด</th>
+                                <th style="width: 15%">สถานะ</th>
+                                <th style="width: 15%">การเงินอนุมัติ</th>
+                                <th style="width: 15%">ผู้อำนวยการอนุมัติ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requests %}
+                            <tr>
+                                <td class="text-center">{{ req.id }}</td>
+                                <td>{{ req.date.strftime('%d/%m/%Y') }}</td>
+                                <td><span class="badge bg-secondary">{{ req.requester.name or
+                                        role_names_th.get(req.requester.role, req.requester.username) }}</span></td>
+                                <td class="text-end">{{ "{:,.2f}".format(req.amount) }}</td>
+                                <td>
+                                    {% if req.account_type in ['Subsidy', 'เงินอุดหนุนอื่น'] %}
+                                    <span class="badge bg-info">เงินอุดหนุน</span>
+                                    {% elif req.account_type in ['Income', 'เงินรายได้สถานศึกษา'] %}
+                                    <span class="badge bg-success">เงินรายได้</span>
+                                    {% elif req.account_type in ['Lunch', 'เงินอาหารกลางวัน'] %}
+                                    <span class="badge bg-warning text-dark">เงินอาหารกลางวัน</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ req.account_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ req.description or '-' }}</small></td>
+                                <td class="text-center">
+                                    {% if req.status == 'APPROVED' %}
+                                    <span class="badge bg-success fs-6">✓ อนุมัติแล้ว</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark fs-6">⏳ รอการอนุมัติ</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if req.finance_approved_at %}
+                                    <div class="text-success fw-bold">✓ อนุมัติแล้ว</div>
+                                    <small class="text-muted">
+                                        {{ req.finance_approved_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </small>
+                                    {% else %}
+                                    <span class="badge bg-secondary">รอดำเนินการ</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if req.director_approved_at %}
+                                    <div class="text-success fw-bold">✓ อนุมัติแล้ว</div>
+                                    <small class="text-muted">
+                                        {{ req.director_approved_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </small>
+                                    {% else %}
+                                    <span class="badge bg-secondary">รอดำเนินการ</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="bi bi-info-circle"></i> ยังไม่มีคำขอเบิกเงิน
+                    <br>
+                    <a href="{{ url_for('request_page') }}" class="btn btn-primary mt-3">ส่งคำขอเบิกเงิน</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table th {
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .badge {
+        padding: 0.5em 0.8em;
+    }
+</style>
+{% endblock %}

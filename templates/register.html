@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg border-0 rounded-3 mt-5">
+            <div class="card-header bg-success text-white text-center py-3">
+                <h4 class="mb-0">สมัครสมาชิก (Register)</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">ชื่อผู้ใช้ (Username)</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">ชื่อ-นามสกุล (ภาษาไทย)</label>
+                        <input type="text" class="form-control" id="name" name="name"
+                            placeholder="เช่น คุณครู ชื่อ นามสกุล" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">หน้าที่ (Role)</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="">-- เลือกหน้าที่ --</option>
+                            <option value="teacher">คุณครู (Teacher)</option>
+                            <option value="finance">ครูการเงิน (Finance)</option>
+                            <option value="director">ผู้อำนวยการ (Director)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">รหัสผ่าน (Password)</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">ยืนยันรหัสผ่าน (Confirm Password)</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                            required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">ลงทะเบียน</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center bg-light">
+                <p class="mb-0">มีบัญชีผู้ใช้แล้ว? <a href="{{ url_for('login') }}">เข้าสู่ระบบ</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

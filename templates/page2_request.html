@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-primary"><i class="bi bi-file-earmark-text"></i> ส่งคำร้องเบิกเงิน</h2>
+            <a href="https://docs.google.com/spreadsheets/d/1vY-MKQ0BDr5FIO1T9apfjigdHGXDq9Br/edit?usp=sharing&ouid=101263904068999747149&rtpof=true&sd=true"
+                target="_blank" class="btn btn-info text-white">
+                <i class="bi bi-eye"></i> ตรวจสอบงบโครงการ (Dashboard)
+            </a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="date" class="form-label">วันที่ขอกเบิก</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="account_type" class="form-label">ประเภทบัญชี</label>
+                        <select class="form-select" id="account_type" name="account_type" required>
+                            <option value="">-- กรุณาเลือก --</option>
+                            <option value="เงินอุดหนุนอื่น">1. เงินอุดหนุนอื่น</option>
+                            <option value="เงินรายได้สถานศึกษา">2. เงินรายได้สถานศึกษา</option>
+                            <option value="เงินอาหารกลางวัน">3. เงินอาหารกลางวัน</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">จำนวนเงิน (บาท)</label>
+                        <input type="number" step="0.01" class="form-control" id="amount" name="amount"
+                            placeholder="0.00" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">รายละเอียด</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                            placeholder="ระบุรายละเอียดการขอเบิกเงิน (ถ้ามี)"></textarea>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">ส่งคำร้องขอเบิก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if current_user.role == 'finance' %}
+        <div class="text-center mt-5">
+            <hr>
+            <p class="text-muted">สำหรับเจ้าหน้าที่การเงิน</p>
+            <a href="{{ url_for('ledger_view', type='subsidy') }}"
+                class="btn btn-outline-primary m-1">ทะเบียนคุมเงินอุดหนุน</a>
+            <a href="{{ url_for('ledger_view', type='income') }}"
+                class="btn btn-outline-primary m-1">ทะเบียนคุมเงินรายได้</a>
+            <a href="{{ url_for('ledger_view', type='lunch') }}"
+                class="btn btn-outline-primary m-1">ทะเบียนคุมเงินอาหารกลางวัน</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Set default date to today
+    document.getElementById('date').valueAsDate = new Date();
+</script>
+{% endblock %}

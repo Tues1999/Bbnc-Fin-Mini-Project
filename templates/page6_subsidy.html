@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-primary">{{ header }}</h2>
+            <a href="{{ url_for('export_ledger', type='subsidy') }}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel (.xlsx)
+            </a>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <h6 class="card-title text-success"><i class="bi bi-arrow-down-circle"></i> รายรับของเดือนนี้
+                        </h6>
+                        <h3 class="text-success">{{ "{:,.2f}".format(monthly_income) }} บาท</h3>
+                        <small class="text-muted">{{ current_month }}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-danger">
+                    <div class="card-body">
+                        <h6 class="card-title text-danger"><i class="bi bi-arrow-up-circle"></i> รายจ่ายของเดือนนี้</h6>
+                        <h3 class="text-danger">{{ "{:,.2f}".format(monthly_expense) }} บาท</h3>
+                        <small class="text-muted">{{ current_month }}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-title text-primary"><i class="bi bi-wallet2"></i> เงินคงเหลือ</h6>
+                                <h3 class="text-primary">{{ "{:,.2f}".format(current_balance) }} บาท</h3>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#dateRangeModal">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">{{ balance_start }} ถึง {{ balance_end }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Range Modal -->
+        <div class="modal fade" id="dateRangeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">เลือกช่วงเวลาคำนวณยอดคงเหลือ</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="GET">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">จากวันที่</label>
+                                <input type="date" class="form-control" name="balance_start" value="{{ balance_start }}"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ถึงวันที่</label>
+                                <input type="date" class="form-control" name="balance_end" value="{{ balance_end }}"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                            <button type="submit" class="btn btn-primary">คำนวณ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Entry Form -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <strong>เพิ่มรายการใหม่</strong>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="row g-3">
+                    <div class="col-md-2">
+                        <label for="date" class="form-label">วันที่</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="category" class="form-label">หมวดหมู่</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">เลือกหมวดหมู่...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="transaction_type" class="form-label">ประเภท</label>
+                        <select class="form-select" name="transaction_type" required>
+                            <option value="Income" class="text-success">รายรับ</option>
+                            <option value="Expense" class="text-danger">รายจ่าย</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="amount" class="form-label">จำนวนเงิน</label>
+                        <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                    </div>
+                    <!-- New Row for Description and Note -->
+                    <div class="col-md-8">
+                        <label for="description" class="form-label">รายละเอียด</label>
+                        <input type="text" class="form-control" id="description" name="description"
+                            placeholder="ระบุรายละเอียดรายการ...">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="note" class="form-label">หมายเหตุ</label>
+                        <input type="text" class="form-control" id="note" name="note" placeholder="หมายเหตุเพิ่มเติม">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-plus-circle"></i>
+                            บันทึกรายการ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Ledger Table -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>วันที่</th>
+                                <th>หมวดหมู่</th>
+                                <th>ผู้ทำรายการ</th>
+                                <th>รายละเอียด</th>
+                                <th class="text-end text-success">รายรับ</th>
+                                <th class="text-end text-danger">รายจ่าย</th>
+                                <th class="text-end">คงเหลือ</th>
+                                <th>หมายเหตุ</th>
+                                <th class="text-center">การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set ns = namespace(balance=0) %}
+                            {% for entry in entries %}
+                            {% if entry.transaction_type == 'Income' %}
+                            {% set ns.balance = ns.balance + entry.amount %}
+                            {% else %}
+                            {% set ns.balance = ns.balance - entry.amount %}
+                            {% endif %}
+                            <tr>
+                                <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ entry.category }}</td>
+                                <td>
+                                    {% if entry.expense_request %}
+                                    <span class="badge bg-info">{{ entry.expense_request.requester.name or
+                                        entry.expense_request.requester.username }}</span>
+                                    {% elif entry.created_by %}
+                                    <span class="badge bg-secondary">{{ entry.created_by.name or
+                                        entry.created_by.username }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ entry.description or '-' }}</td>
+                                <td class="text-end text-success">
+                                    {% if entry.transaction_type == 'Income' %}{{ "{:,.2f}".format(entry.amount) }}{%
+                                    endif %}
+                                </td>
+                                <td class="text-end text-danger">
+                                    {% if entry.transaction_type == 'Expense' %}{{ "{:,.2f}".format(entry.amount) }}{%
+                                    endif %}
+                                </td>
+                                <td class="text-end fw-bold">{{ "{:,.2f}".format(ns.balance) }}</td>
+                                <td>{{ entry.note or '-' }}</td>
+                                <td class="text-center">
+                                    {% if current_user.role in ['finance', 'director'] %}
+                                    <a href="{{ url_for('edit_ledger_entry', type='subsidy', entry_id=entry.id) }}"
+                                        class="btn btn-sm btn-warning me-1">แก้ไข</a>
+                                    <a href="{{ url_for('ledger_history', entry_id=entry.id) }}"
+                                        class="btn btn-sm btn-info">ประวัติ</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('date').valueAsDate = new Date();
+</script>
+{% endblock %}

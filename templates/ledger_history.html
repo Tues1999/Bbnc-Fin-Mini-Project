@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-primary">ประวัติการแก้ไข - รายการ #{{ entry.id }}</h2>
+            <a href="{{ url_for('ledger_view', type=ledger_type_url) }}" class="btn btn-secondary">กลับ</a>
+        </div>
+
+        <!-- Entry Details -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">ข้อมูลรายการปัจจุบัน</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>วันที่:</strong> {{ entry.date.strftime('%d/%m/%Y') }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>จำนวนเงิน:</strong> {{ "{:,.2f}".format(entry.amount) }} บาท
+                    </div>
+                    <div class="col-md-3">
+                        <strong>ประเภท:</strong> {{ entry.transaction_type }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>หมวดหมู่:</strong> {{ entry.category }}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <strong>รายละเอียด:</strong> {{ entry.description or '-' }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>หมายเหตุ:</strong> {{ entry.note or '-' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">ประวัติการแก้ไขทั้งหมด</h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 15%">วันที่/เวลา</th>
+                                <th style="width: 15%">แก้ไขโดย</th>
+                                <th style="width: 15%">ฟิลด์ที่แก้ไข</th>
+                                <th style="width: 27.5%">ค่าเดิม</th>
+                                <th style="width: 27.5%">ค่าใหม่</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h in history %}
+                            <tr>
+                                <td>{{ h.edited_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ h.edited_by.name or h.edited_by.username
+                                        }}</span>
+                                </td>
+                                <td>
+                                    {% if h.field_name == 'amount' %}
+                                    <span class="badge bg-warning text-dark">จำนวนเงิน</span>
+                                    {% elif h.field_name == 'description' %}
+                                    <span class="badge bg-info">รายละเอียด</span>
+                                    {% elif h.field_name == 'note' %}
+                                    <span class="badge bg-primary">หมายเหตุ</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ h.field_name }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-danger text-decoration-line-through">
+                                        {{ h.old_value or '-' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-success fw-bold">
+                                        {{ h.new_value or '-' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> ไม่มีประวัติการแก้ไข - รายการนี้ยังไม่เคยถูกแก้ไข
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}
