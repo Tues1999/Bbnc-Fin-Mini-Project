@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, send_file
+from flask import Flask, render_template, redirect, url_for, request, flash, send_file, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
@@ -6,13 +6,19 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import io
 import os
+import secrets
 
 from models import db, User, ExpenseRequest, LedgerEntry, LedgerEntryHistory
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'banbangnamchuet_secret_key_123'
+# Production: Use environment variable for secret key, fallback to generated key for development
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///financial_system.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Security: Enable session cookie security in production
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('PRODUCTION', 'false').lower() == 'true'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 db.init_app(app)
 login_manager = LoginManager()
@@ -128,7 +134,15 @@ def request_page():
         
     if request.method == 'POST':
         date_str = request.form.get('date')
-        amount = float(request.form.get('amount'))
+        # Input validation for amount
+        try:
+            amount = float(request.form.get('amount', 0))
+            if amount <= 0 or amount > 100000000:  # Max 100 million baht
+                flash('จำนวนเงินต้องมากกว่า 0 และไม่เกิน 100,000,000 บาท', 'danger')
+                return render_template('page2_request.html')
+        except (ValueError, TypeError):
+            flash('กรุณาระบุจำนวนเงินที่ถูกต้อง', 'danger')
+            return render_template('page2_request.html')
         description = request.form.get('description', '')  # NEW
         account_type = request.form.get('account_type')
         
@@ -139,8 +153,6 @@ def request_page():
             description=description,  # NEW
             account_type=account_type
         )
-        db.session.add(new_request)
-        db.session.commit()
         db.session.add(new_request)
         db.session.commit()
         flash('บันทึกคำขอเบิกเงินเรียบร้อยแล้ว', 'success')
@@ -328,7 +340,15 @@ def ledger_view(type):
 
     if request.method == 'POST':
         date_str = request.form.get('date')
-        amount = float(request.form.get('amount'))
+        # Input validation for ledger amount
+        try:
+            amount = float(request.form.get('amount', 0))
+            if amount <= 0 or amount > 100000000:
+                flash('จำนวนเงินต้องมากกว่า 0 และไม่เกิน 100,000,000 บาท', 'danger')
+                return redirect(url_for('ledger_view', type=type))
+        except (ValueError, TypeError):
+            flash('กรุณาระบุจำนวนเงินที่ถูกต้อง', 'danger')
+            return redirect(url_for('ledger_view', type=type))
         description = request.form.get('description')
         note = request.form.get('note')  # NEW
         category = request.form.get('category')
@@ -348,8 +368,27 @@ def ledger_view(type):
         db.session.commit()
         flash('บันทึกรายการเรียบร้อยแล้ว', 'success')
     
-    # Fetch entries (Optimized with Eager Loading & Date Filtering)
+    # Calculate date range first (needed for filtering)
+    from sqlalchemy import func
     from sqlalchemy.orm import joinedload
+    
+    today = date.today()
+    current_month_start = today.replace(day=1)
+    current_month_end = (current_month_start + relativedelta(months=1)) - relativedelta(days=1)
+    
+    # Get date range from query params or use defaults
+    balance_start = request.args.get('balance_start')
+    balance_end = request.args.get('balance_end')
+    
+    if balance_start and balance_end:
+        balance_start_date = datetime.strptime(balance_start, '%Y-%m-%d').date()
+        balance_end_date = datetime.strptime(balance_end, '%Y-%m-%d').date()
+    else:
+        # Default: start of current year to today
+        balance_start_date = today.replace(month=1, day=1)
+        balance_end_date = today
+    
+    # Fetch entries (Optimized with Eager Loading & Date Filtering)
     query = LedgerEntry.query.filter_by(ledger_type=config['db_type'])
     
     if balance_start_date:
@@ -368,25 +407,6 @@ def ledger_view(type):
         categories = ['ค่าจัดการเรียนการสอน', 'ค่ากิจกรรมพัฒนาผู้เรียน', 'ค่าเครื่องแบบ', 'ค่าอุปกรณ์การเรียน', 'ค่าหนังสือเรียน', 'อื่นๆ']
     elif type == 'income':
         categories = ['เงินบริจาค', 'ทุนการศึกษา', 'ค่าจ้างครู', 'อื่นๆ']
-    
-    # Calculate summary statistics (Optimized using SQL queries)
-    from sqlalchemy import func
-    
-    today = date.today()
-    current_month_start = today.replace(day=1)
-    current_month_end = (current_month_start + relativedelta(months=1)) - relativedelta(days=1)
-    
-    # Get date range from query params or use defaults
-    balance_start = request.args.get('balance_start')
-    balance_end = request.args.get('balance_end')
-    
-    if balance_start and balance_end:
-        balance_start_date = datetime.strptime(balance_start, '%Y-%m-%d').date()
-        balance_end_date = datetime.strptime(balance_end, '%Y-%m-%d').date()
-    else:
-        # Default: start of current year to today
-        balance_start_date = today.replace(month=1, day=1)
-        balance_end_date = today
     
     # Helper to calculate sum
     def get_sum(transaction_type, start_date, end_date):
@@ -534,4 +554,6 @@ if __name__ == '__main__':
     else:
         # Also run init_db to check for missing tables/users in case of partial setup
         init_db()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Production: Set debug=False, use environment variable to override if needed
+    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)
